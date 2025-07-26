@@ -10,6 +10,7 @@ import 'dart:developer' as developer;
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
+final mainUrl = 'https://e22dfb2b23d5.ngrok-free.app';
 
 class MyAuth {
 
@@ -57,7 +58,7 @@ class MyAuth {
         }
       };
 
-      // registerToBackend(toBackendBody);
+      registerToBackend(toBackendBody);
       // SocketService().connect();
 
       return clientDetails;
@@ -86,7 +87,7 @@ class MyAuth {
           "lastSignInTime": freshUser?.metadata.lastSignInTime?.toIso8601String()
         }
       };
-      // registerToBackend(toBackendBody);
+      registerToBackend(toBackendBody);
 
 
       developer.log("normalReg:🛡️${freshUser!.displayName}");
@@ -119,12 +120,12 @@ class MyAuth {
       // Show the error using a snackbar, alert dialog, etc.
       toastification.show(
         alignment: Alignment.topCenter,
-        title: Text(message,style: TextStyle(color: Colors.white),),
-        description: Text(desc,style: TextStyle(color: Colors.white),),
+        title: Text(message,style: TextStyle(color: Colors.black),),
+        description: Text(desc,style: TextStyle(color: Colors.black),),
         style: ToastificationStyle.flat,
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.white,
         autoCloseDuration: Duration(seconds: 3),
-        icon: Icon(Icons.info_outline_rounded,color: Colors.white,),
+        icon: Icon(Icons.info_outline_rounded,color: Colors.red,),
       );
     }
   }
@@ -140,11 +141,11 @@ class MyAuth {
       if (firebaseUser.email == null) {
         toastification.show(
           alignment: Alignment.topCenter,
-          title: Text("Login failed", style: TextStyle(color: Colors.white)),
+          title: Text("Login failed", style: TextStyle(color: Colors.black)),
           style: ToastificationStyle.flat,
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.white,
           autoCloseDuration: Duration(seconds: 3),
-          icon: Icon(Icons.info_outline_rounded, color: Colors.white),
+          icon: Icon(Icons.info_outline_rounded, color: Colors.red),
         );
         return null;
       }
@@ -223,54 +224,54 @@ class MyAuth {
 
 }
 
-// Future registerToBackend(data)async{
-//   final Uri serverEndpoint = Uri.parse("https://campusnetserver-production.up.railway.app/reg");
+Future registerToBackend(data)async{
+  final Uri serverEndpoint = Uri.parse("$mainUrl/reg");
 
-//   try{
-//     final response = await http.post(
-//         serverEndpoint,
-//         headers:{
-//         'Content-type':'application/json'
-//         },
-//         body: jsonEncode(data));
+  try{
+    final response = await http.post(
+        serverEndpoint,
+        headers:{
+        'Content-type':'application/json'
+        },
+        body: jsonEncode(data));
 
-//     if (response.statusCode == 201) {
-//       developer.log("✅ User registered successfully");
-//     } else if (response.statusCode == 409) {
-//       developer.log("⚠️ User already exists");
-//     } else {
-//       developer.log("❌ Backend error: ${response.statusCode} ${response.body}");
-//     }
+    if (response.statusCode == 201) {
+      developer.log("✅ User registered successfully");
+    } else if (response.statusCode == 409) {
+      developer.log("⚠️ User already exists");
+    } else {
+      developer.log("❌ Backend error: ${response.statusCode} ${response.body}");
+    }
 
-//   }catch(e){
-//     developer.log("RegBackend:$e");
-//   }
+  }catch(e){
+    developer.log("RegBackend:$e");
+  }
 
-// }
+}
 
-// void loginToBackend(data)async{
+void loginToBackend(data)async{
 
-//   final Uri serverEndpoint = Uri.parse("https://campusnetserver-production.up.railway.app/login");
+  final Uri serverEndpoint = Uri.parse("https://campusnetserver-production.up.railway.app/login");
 
-//   try{
-//     final response = await http.post(
-//         serverEndpoint,
-//         headers:{
-//           'Content-type':'application/json'
-//         },
-//         body: jsonEncode(data));
+  try{
+    final response = await http.post(
+        serverEndpoint,
+        headers:{
+          'Content-type':'application/json'
+        },
+        body: jsonEncode(data));
 
-//     if (response.statusCode == 201) {
-//       developer.log("✅ Added The Entry");
-//     }else if(response.statusCode == 200) {
-//       developer.log("🫡✅ Last sign in Update");
-//     }else
-//     {
-//       developer.log("❌ Backend error: ${response.statusCode} ${response.body}");
-//     }
+    if (response.statusCode == 201) {
+      developer.log("✅ Added The Entry");
+    }else if(response.statusCode == 200) {
+      developer.log("🫡✅ Last sign in Update");
+    }else
+    {
+      developer.log("❌ Backend error: ${response.statusCode} ${response.body}");
+    }
 
-//   }catch(e){
-//     developer.log("🏄‍♂️$e");
-//   }
+  }catch(e){
+    developer.log("🏄‍♂️$e");
+  }
 
-// }
+}

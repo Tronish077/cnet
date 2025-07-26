@@ -181,28 +181,27 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             height: 50,
                             child: TextButton(
                                 onPressed: () async {
-                                    if (formKey.currentState!.validate()) {
-                                      try {
+                                  if (formKey.currentState!.validate()) {
+                                    try {
                                       if (!mounted) return;
                                       ref.read(loadingProvider.notifier).startLoading(context);
-                                      final user = await _auth.normalLogin(email.text, password.text, context);
-                                      print(user);
-                                      if (!mounted) return;
 
-                                      // Only navigate if login succeeded
-                                      if (user != null && user.email != null && user.email!.isNotEmpty) {
-                                        developer.log("$user");
-                                        Navigator.pushNamedAndRemoveUntil(
-                                            context, '/HomePage', (route) => false);
+                                      final user = await _auth.normalLogin(email.text, password.text, context);
+
+                                      if (!mounted) return;
+                                      if (user != null) {
+                                        // stop loading first
+                                        ref.read(loadingProvider.notifier).stopLoading(context);
+                                        // then navigate
+                                        Navigator.of(context).pushReplacementNamed('/Home');
                                       }
-                                      // else: do nothing, error toast already shown in Auth.dart
                                     } catch (e, stackTrace) {
-                                  developer.log("🍃normal Login: $stackTrace");
-                                  } finally {
-                                  if (mounted) ref.read(loadingProvider.notifier).stopLoading(context);
-                                  }
+                                      developer.log("Login error: $stackTrace");
+                                      ref.read(loadingProvider.notifier).stopLoading(context);
                                     }
-                                },
+                                  }
+                                }
+                                ,
                                 style: TextButton.styleFrom(
                                   backgroundColor: Theme.of(context).primaryColor,
                                 ),
@@ -243,13 +242,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                 if (!mounted) return;
                                 final email = user.user?.email;
                                 if (email != null && email.isNotEmpty) {
-                                  // Navigator.pushNamedAndRemoveUntil(context, '/Register', (route) => false);
+                                  Navigator.pushNamedAndRemoveUntil(context, '/Home', (route) => false);
                                 } else {
-                                  // ref.watch(loadingProvider.notifier).stopLoading(context);
+                                  ref.watch(loadingProvider.notifier).stopLoading(context);
                                   developer.log("❌ Email is null or empty");
                                 }
                               }catch(e,stackTrace){
-                                // ref.watch(loadingProvider.notifier).stopLoading(context);
+                                ref.watch(loadingProvider.notifier).stopLoading(context);
                                 developer.log("🍃${stackTrace}");
                               }
                             },

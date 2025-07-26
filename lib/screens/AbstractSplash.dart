@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
@@ -9,6 +10,25 @@ class Splash extends StatefulWidget {
 }
 
 class _SplashState extends State<Splash> {
+
+  final FirebaseAuth _firebase = FirebaseAuth.instance;
+
+  @override
+  void initState(){
+    super.initState();
+    Future.delayed(Duration(milliseconds: 3000),checkUser);
+  }
+
+  void checkUser(){
+    if(_firebase.currentUser != null){
+      Navigator.of(context).pushReplacementNamed('/Home');
+    }else{
+      Navigator.of(context).pushReplacementNamed('/Register');
+    }
+  }
+
+
+
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;

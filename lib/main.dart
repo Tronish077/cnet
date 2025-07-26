@@ -1,3 +1,5 @@
+import 'package:cnet/screens/AbstractSplash.dart';
+import 'package:cnet/screens/Home.dart';
 import 'package:cnet/screens/Register.dart';
 import 'package:cnet/screens/login.dart';
 import 'package:toastification/toastification.dart';
@@ -17,7 +19,9 @@ void main() async{
               primaryColor:const Color.fromARGB(255, 61, 42, 234),
             ),
           routes:{
-            '/':(context)=>LoginPage(),  
+            '/':(context)=>Splash(),
+            '/Home':(context)=>HomePage(),
+            '/Login':(context)=>LoginPage(),
             '/Register':(context)=>RegisterPage()
           },
         ),

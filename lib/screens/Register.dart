@@ -223,15 +223,17 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                 try{
                                   ref.watch(loadingProvider.notifier).startLoading(context);
                                   final UserCredential user = await _auth.normalRegister(email.text, password.text,fullName.text,context);
-                                  if(user.user!.email!.isNotEmpty){
-                                    developer.log("$user");
-                                    Navigator.pushNamedAndRemoveUntil(
-                                        context, '/HomePage', (route) => false);
+
+                                  if(user.user != null && user.user!.uid.isNotEmpty){
+                                    if(!mounted) return;
+                                    ref.watch(loadingProvider.notifier).stopLoading(context);
+                                    Navigator.of(context).pushReplacementNamed('/Home');
+                                  }else{
+                                    ref.read(loadingProvider.notifier).stopLoading(context);
                                   }
                                 }
                                     catch(e){
                                   developer.log("$e");
-                                    }finally{
                                   ref.watch(loadingProvider.notifier).stopLoading(context);
                                 }
                               }
@@ -271,15 +273,16 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                               try {
                                 ref.watch(loadingProvider.notifier).startLoading(context);
                                 final UserCredential user = await _auth.googleAuth(context);
-                                if(user.user!.email!.isNotEmpty){
-                                  developer.log("$user");
-                                  Navigator.pushNamedAndRemoveUntil(
-                                      context, '/HomePage', (route) => false);
+
+                                if(user.user != null && user.user!.uid.isNotEmpty){
+                                  if(!mounted) return;
+                                  ref.read(loadingProvider.notifier).stopLoading(context);
+                                  Navigator.of(context).pushReplacementNamed('/Home');
+                                }else{
+                                  ref.watch(loadingProvider.notifier).stopLoading(context);
                                 }
                               }catch(e){
                                 developer.log("GoogleReg:❌$e");
-                              }finally{
-                                ref.watch(loadingProvider.notifier).stopLoading(context);
                               }
                             },
                                 style: TextButton.styleFrom(
@@ -310,7 +313,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                               ),
                               GestureDetector(
                                 onTap: (){
-                                  Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+                                  Navigator.pushNamedAndRemoveUntil(context, '/Login', (route) => false);
                                 },
                                 child: Text(
                                     " Sign in",
