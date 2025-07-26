@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "365882652253",
+    "project_id": "cnet-8756f",
+    "storage_bucket": "cnet-8756f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:365882652253:android:432aa6b97b460cb7c5bfb4",
+        "android_client_info": {
+          "package_name": "com.example.cnet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "365882652253-4si9or5sg75i66q7h1c1oe9315gk9ecn.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.cnet",
+            "certificate_hash": "ce68d9e0fda125ac3397ffa21241ba93f8e92bda"
+          }
+        },
+        {
+          "client_id": "365882652253-qboc5ajvk5tqo4ofl30iagm2ute4afil.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAS-LgNpqouk5Jalh3IFy5wJiad8henYpE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "365882652253-0315julv45hfdpdi6fhh8fnr8bcqmict.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
