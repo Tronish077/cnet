@@ -194,6 +194,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                         ref.read(loadingProvider.notifier).stopLoading(context);
                                         // then navigate
                                         Navigator.of(context).pushReplacementNamed('/Home');
+                                      }else{
+                                        ref.read(loadingProvider.notifier).stopLoading(context);
                                       }
                                     } catch (e, stackTrace) {
                                       developer.log("Login error: $stackTrace");

@@ -283,6 +283,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                                 }
                               }catch(e){
                                 developer.log("GoogleReg:❌$e");
+                                ref.watch(loadingProvider.notifier).stopLoading(context);
                               }
                             },
                                 style: TextButton.styleFrom(

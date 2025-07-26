@@ -50,6 +50,7 @@ class MyAuth {
         "uid": fullUser.uid,
         "email": fullUser.email,
         "displayName": fullUser.displayName,
+        "Provider":"Google",
         "metadata": {
           "creationTime":
           fullUser.metadata.creationTime?.toIso8601String(),
@@ -81,6 +82,7 @@ class MyAuth {
       final toBackendBody = {
         "uid":freshUser?.uid,
         "email":freshUser?.email,
+        "Provider":"email",
         "displayName":freshUser?.displayName,
         "metadata":{
           "creationTime": freshUser?.metadata.creationTime?.toIso8601String(),
@@ -111,6 +113,9 @@ class MyAuth {
         message = 'The password is too weak.';
         desc = 'Try a different Combination';
         break;
+      case 'network-request-failed':
+        desc = '';
+        message = "Please Check your connection and try again";
       default:
         message = 'An unexpected error occurred.';
         desc = ' Please try again later.';
