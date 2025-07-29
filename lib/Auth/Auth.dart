@@ -10,7 +10,7 @@ import 'dart:developer' as developer;
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
-final mainUrl = 'https://e22dfb2b23d5.ngrok-free.app';
+final mainUrl = 'https://b1dd220afa6e.ngrok-free.app';
 
 class MyAuth {
 

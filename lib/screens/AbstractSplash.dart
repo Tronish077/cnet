@@ -1,22 +1,33 @@
+import 'package:cnet/Providers/ListingProvider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../BackendFuncs/ListingHandling.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 
-class Splash extends StatefulWidget {
+class Splash extends ConsumerStatefulWidget {
   const Splash({super.key});
 
   @override
-  State<Splash> createState() => _SplashState();
+  ConsumerState<Splash> createState() => _SplashState();
 }
 
-class _SplashState extends State<Splash> {
+class _SplashState extends ConsumerState<Splash> {
 
   final FirebaseAuth _firebase = FirebaseAuth.instance;
 
   @override
   void initState(){
     super.initState();
-    Future.delayed(Duration(milliseconds: 3000),checkUser);
+    _initialize();
+  }
+
+  Future<void> _initialize() async{
+    await ref.read(ListingProvider.notifier).getListings();
+    await Future.delayed(const Duration(milliseconds: 1000));
+
+    if(!mounted) return;
+    checkUser();
   }
 
   void checkUser(){

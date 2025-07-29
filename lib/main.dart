@@ -1,6 +1,7 @@
 import 'package:cnet/screens/AbstractSplash.dart';
-import 'package:cnet/screens/Home.dart';
 import 'package:cnet/screens/Register.dart';
+import 'package:cnet/screens/HomePage.dart';
+import 'package:cnet/screens/Sections/CreatePost.dart';
 import 'package:cnet/screens/login.dart';
 import 'package:toastification/toastification.dart';
 import 'package:flutter/material.dart';
@@ -15,7 +16,7 @@ void main() async{
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
             theme: ThemeData(
-              fontFamily: 'Liter',
+              fontFamily: 'Poppins',
               primaryColor:const Color.fromARGB(255, 61, 42, 234),
             ),
           routes:{
