@@ -16,7 +16,7 @@ void main() async{
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
             theme: ThemeData(
-              fontFamily: 'Poppins',
+              fontFamily: 'Lato',
               primaryColor:const Color.fromARGB(255, 61, 42, 234),
             ),
           routes:{

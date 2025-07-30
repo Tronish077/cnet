@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:image_picker/image_picker.dart';
+import 'package:toastification/toastification.dart';
 import '../FunctionClasses/ListingClass.dart';
 import '../FunctionClasses/imageUpload.dart';
 import 'package:nanoid/nanoid.dart';
@@ -9,7 +10,7 @@ import 'dart:developer' as developer;
 
 //This is the main EndPoint Url
 
-final String mainUrl = 'https://b1dd220afa6e.ngrok-free.app';
+final String mainUrl = "https://d268c76a0ba7.ngrok-free.app";
 
 Future uploadListing(
     List<XFile> imageUrls,title,contact,
@@ -66,7 +67,7 @@ Future getListings()async{
         endPointUri,
         headers: {
           'Content-Type': 'application/json',
-          'ngrok-skip-browser-warning':'yes'
+          'ngrok-skip-browser-warning':'true'
         },
         // body: jsonEncode({
         //   'Page': page,
@@ -82,6 +83,73 @@ Future getListings()async{
 
 }
 
+Future saveListing(Listing listing)async{
+  final endPointUrl = Uri.parse("${mainUrl.trim()}/saveListing");
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  try {
+    final toSendJson = {
+      'postId': listing.id,
+      'uid': uid
+    };
+
+    final requestBody = await http.post(
+        endPointUrl,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(toSendJson)
+    );
+
+
+    switch(requestBody.statusCode){
+      case 400:
+        return 400;
+      case 401:
+        return 401;
+      case 409:
+        return 409;
+      case 201:
+        return 201;
+    }
+  }catch(e){
+    developer.log("Save Listing ❌: $e");
+  }
+
+}
+
+Future deleteSavedListing(Listing listing)async{
+  //Sends a delete request
+  final endPointUrl = Uri.parse("${mainUrl.trim()}/saveListing");
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  try {
+    final toSendJson = {
+      'postId': listing.id,
+      'uid': uid
+    };
+
+    final requestBody = await http.delete(
+        endPointUrl,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode(toSendJson)
+    );
+
+    print(requestBody.statusCode);
+
+    switch(requestBody.statusCode){
+      case 500:
+        return 500;
+      case 200:
+        return 200;
+    }
+  }catch(e){
+    developer.log("Delete Listing ❌: $e");
+  }
+
+}
 
 Future getProfilePosts(ownerID)async{
   final endPointUrl = Uri.parse("${mainUrl.trim()}/profilePosts");

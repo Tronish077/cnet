@@ -1,7 +1,9 @@
 import 'package:cnet/Providers/LoaderProvider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:toastification/toastification.dart';
 import 'dart:developer' as developer;
 import '../CustomWidgets/customeWidget.dart';
 // import 'package:mvp/socket/socketConfig.dart';
@@ -249,9 +251,21 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                   ref.watch(loadingProvider.notifier).stopLoading(context);
                                   developer.log("❌ Email is null or empty");
                                 }
-                              }catch(e,stackTrace){
-                                ref.watch(loadingProvider.notifier).stopLoading(context);
-                                developer.log("🍃${stackTrace}");
+                              }catch(e,stackTrace) {
+                                if (e is PlatformException && e.code == 'network_error') {
+                                  ref.watch(loadingProvider.notifier).stopLoading(context);
+                                  //Toastification
+                                  toastification.show(
+                                    alignment: Alignment.topCenter,
+                                    title: Text("Network Error",style: TextStyle(color: Colors.black),),
+                                    description: Text("Check you internet Connection",style: TextStyle(color: Colors.black),),
+                                    style: ToastificationStyle.flat,
+                                    backgroundColor: Colors.white,
+                                    autoCloseDuration: Duration(seconds: 3),
+                                    icon: Icon(Icons.info_outline_rounded,color: Colors.red,),
+                                  );
+                                }
+                                developer.log("🍃:$e, $stackTrace}");
                               }
                             },
                                 style: TextButton.styleFrom(

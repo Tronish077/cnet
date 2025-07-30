@@ -10,7 +10,7 @@ import 'dart:developer' as developer;
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
-final mainUrl = 'https://b1dd220afa6e.ngrok-free.app';
+final mainUrl = 'https://d268c76a0ba7.ngrok-free.app';
 
 class MyAuth {
 
@@ -64,8 +64,46 @@ class MyAuth {
 
       return clientDetails;
     } on FirebaseAuthException catch (e) {
-      developer.log("googleAuth: $e");
-      return null;
+      String message;
+      String desc;
+
+      //Switch for error code Firebase
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'This email is already registered.';
+          desc = "Login instead";
+          break;
+        case 'invalid-email':
+          message = 'The email address is not valid.';
+          desc = "Re-enter Your email";
+          break;
+        case 'weak-password':
+          message = 'The password is too weak.';
+          desc = 'Try a different Combination';
+          break;
+        case 'network-request-failed':
+          desc = 'retry on-connection';
+          message = "Please Check your connection";
+        case 'user-disabled':
+          message = "This is a Disabled Account";
+          desc = "Contact Admin";
+          break;
+        default:
+          message = 'An unexpected error occurred.';
+          desc = ' Please try again later.';
+      }
+
+
+      // Show the error using a snackbar, alert dialog, etc.
+      toastification.show(
+        alignment: Alignment.topCenter,
+        title: Text(message,style: TextStyle(color: Colors.black),),
+        description: Text(desc,style: TextStyle(color: Colors.black),),
+        style: ToastificationStyle.flat,
+        backgroundColor: Colors.white,
+        autoCloseDuration: Duration(seconds: 3),
+        icon: Icon(Icons.info_outline_rounded,color: Colors.red,),
+      );
     }
   }
 
@@ -114,8 +152,8 @@ class MyAuth {
         desc = 'Try a different Combination';
         break;
       case 'network-request-failed':
-        desc = '';
-        message = "Please Check your connection and try again";
+        desc = 'retry on-connection';
+        message = "Please Check your connection";
       default:
         message = 'An unexpected error occurred.';
         desc = ' Please try again later.';

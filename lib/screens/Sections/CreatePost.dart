@@ -47,6 +47,23 @@ class _PostListingPageState extends State<PostListingPage> {
     }
   }
 
+  void clearForm() {
+    _titleController.clear();
+    _priceController.clear();
+    _descriptionController.clear();
+    _contactController.clear();
+    _locationController.clear();
+    _tagController.clear();
+
+    setState(() {
+      _tags.clear();
+      _pickedImages.clear();
+      _selectedCategory = 'Services';
+      _selectedCondition = 'New';
+      _selectedStatus = 'Available';
+    });
+  }
+
   void _addTag() {
     final tag = _tagController.text.trim();
     if (tag.isNotEmpty) {
@@ -70,7 +87,15 @@ class _PostListingPageState extends State<PostListingPage> {
         _priceController.text,
         _descriptionController.text,
         _selectedCategory,
-      );
+      ).then((_) {
+        // 🧹 Clear form after successful upload
+        clearForm();
+
+        // ✅ Show confirmation if needed
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Listing submitted successfully!')),
+        );
+      });
     }
   }
 
