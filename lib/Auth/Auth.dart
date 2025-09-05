@@ -14,7 +14,7 @@ import '../Providers/FollowProvider.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
-final mainUrl = ' https://ba61eeeec104.ngrok-free.app';
+final mainUrl = 'https://ba61eeeec104.ngrok-free.app';
 
 class MyAuth {
 
@@ -131,7 +131,8 @@ class MyAuth {
           "lastSignInTime": freshUser?.metadata.lastSignInTime?.toIso8601String()
         }
       };
-      registerToBackend(toBackendBody);
+
+      await registerToBackend(toBackendBody);
 
 
       developer.log("normalReg:🛡️${freshUser!.displayName}");
@@ -206,7 +207,8 @@ class MyAuth {
           "lastSignInTime": firebaseUser.metadata.lastSignInTime?.toIso8601String()
         }
       };
-      // loginToBackend(toBackendBody);
+
+      loginToBackend(toBackendBody);
 
       return firebaseUser;
 
@@ -300,7 +302,7 @@ Future registerToBackend(data)async{
 
 void loginToBackend(data)async{
 
-  final Uri serverEndpoint = Uri.parse("https://campusnetserver-production.up.railway.app/login");
+  final Uri serverEndpoint = Uri.parse("$mainUrl/login");
 
   try{
     final response = await http.post(
