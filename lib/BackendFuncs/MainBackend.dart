@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:toastification/toastification.dart';
 import '../FunctionClasses/ListingClass.dart';
 import '../FunctionClasses/imageUpload.dart';
@@ -9,8 +11,7 @@ import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 
 //This is the main EndPoint Url
-
-final String mainUrl = "https://d268c76a0ba7.ngrok-free.app";
+final String mainUrl = "https://ba61eeeec104.ngrok-free.app";
 
 Future uploadListing(
     List<XFile> imageUrls,title,contact,
@@ -41,7 +42,7 @@ async{
       'status':status,
       'location':location,
       'condition':condition,
-      'price':price
+      'price':price.replaceAll(",", "")
     };
 
     final response = await http.post(
@@ -52,7 +53,6 @@ async{
         body: jsonEncode(postData)
     );
 
-    print(response.body);
   }catch(e){
     print("ImageListing  Err🔴: $e");
   }
@@ -76,9 +76,31 @@ Future getListings()async{
         // })
     );
 
+
     return jsonDecode(response.body);
   }catch(e){
     print("GetListing ❌: $e");
+  }
+
+}
+
+Future getMyListings()async{
+  final endPointUri = Uri.parse('${mainUrl.trim()}/myListings');
+
+  try {
+    final response = await http.post(
+      endPointUri,
+      body: json.encode({"uid":FirebaseAuth.instance.currentUser!.uid}),
+      headers: {
+        'Content-Type': 'application/json',
+        'ngrok-skip-browser-warning':'true'
+      },
+    );
+    
+    return jsonDecode(response.body);
+
+  }catch(e){
+    print("GetMyListings ❌: $e");
   }
 
 }
@@ -151,8 +173,32 @@ Future deleteSavedListing(Listing listing)async{
 
 }
 
-Future getProfilePosts(ownerID)async{
-  final endPointUrl = Uri.parse("${mainUrl.trim()}/profilePosts");
+Future deleteListingFunc(String listingId) async{
+  final endPointUrl = Uri.parse("${mainUrl.trim()}/deleteListing");
+
+  try{
+    final toSendJson = {
+      'id': listingId
+    };
+
+    final requestBody = await http.delete(
+      endPointUrl,
+      headers: {
+        'Content-Type': 'application/json',
+    },body: jsonEncode(toSendJson)
+  );
+
+    return requestBody.statusCode;
+
+  }catch(e,stack){
+    if (kDebugMode) {
+      print("Delete listing ❌: $e \n$stack");
+    }
+  }
+}
+
+Future getSavedListings()async{
+  final endPointUrl = Uri.parse("${mainUrl.trim()}/mySaves");
 
   try{
     
@@ -161,20 +207,89 @@ Future getProfilePosts(ownerID)async{
       headers: {
         'Content-type':'application/json'
       },
-        body: jsonEncode({'ownerId':ownerID})
+        body: jsonEncode({'ownerId':FirebaseAuth.instance.currentUser!.uid})
       );
 
       final decoded = jsonDecode(response.body);
-      final  data = decoded['allposts'] as List;
+      final  data = decoded['myListings'] as List;
 
       final List<Listing> lastList = data.map((e) => Listing.fromJson(e)).toList();
 
-      print(lastList.runtimeType);
       return lastList;
 
-  }catch(e) {
-    print('ProfilePosts❌:$e');
+  }catch(e, stackTrace) {
+    print('mySaves❌:${e}');
+    print('➡️:$stackTrace');
     return [];
   }
   
   }
+
+Future getBannerLink(Listing item) async{
+  final String itemId = item.id;
+  final Uri myUrl = Uri.parse("$mainUrl/product?id=$itemId");
+  final response = await  http.get(myUrl);
+
+  print(response.body);
+}
+
+Future<void> openWhatsApp({
+  required String phone, // e.g., "918141138512"
+  required String message,
+}) async
+{
+  final encodedMessage = Uri.encodeComponent(message);
+  final url = Uri.parse("https://wa.me/$phone?text=$encodedMessage");
+
+  if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+    throw Exception('Could not launch WhatsApp');
+  }
+}
+
+Future followUser(Listing item) async{
+  final Uri url = Uri.parse('$mainUrl/Follow');
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+  final ownerObjRef = item.ownerObjRef;
+
+  final toSendJson = {
+    'uid': uid,
+    'ownerObjRef': ownerObjRef
+  };
+
+  final response = await http.post(
+    url,
+    headers:{'Content-type':'application/json'},
+    body: jsonEncode(toSendJson)
+  );
+
+  if (kDebugMode) {
+    print("🔔 Response: ${response.statusCode}");
+  }
+
+}
+
+Future getFollowers()async{
+
+  final Uri url = Uri.parse("$mainUrl/getFollowers");
+  final uid = FirebaseAuth.instance.currentUser?.uid;
+
+  final toSendJson = {
+    'uid': uid,
+  };
+
+  try {
+    final response = await http.post(
+        url,
+        headers: {'Content-type': 'application/json'},
+        body: jsonEncode(toSendJson)
+    );
+
+    if (kDebugMode) {
+      print("🔔 Response: ${response.body}");
+    }
+
+    return jsonDecode(response.body)['count'];
+  }catch(e,stack){
+    return "Followers: ❌ $e $stack";
+  }
+}

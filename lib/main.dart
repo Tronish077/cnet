@@ -1,4 +1,6 @@
 import 'package:cnet/screens/AbstractSplash.dart';
+import 'package:cnet/screens/NestedParts/FullmageView.dart';
+import 'package:cnet/screens/NestedParts/ProductView.dart';
 import 'package:cnet/screens/Register.dart';
 import 'package:cnet/screens/HomePage.dart';
 import 'package:cnet/screens/Sections/CreatePost.dart';
@@ -16,14 +18,15 @@ void main() async{
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
             theme: ThemeData(
-              fontFamily: 'Lato',
+              fontFamily: 'Inter',
               primaryColor:const Color.fromARGB(255, 61, 42, 234),
             ),
           routes:{
             '/':(context)=>Splash(),
             '/Home':(context)=>HomePage(),
             '/Login':(context)=>LoginPage(),
-            '/Register':(context)=>RegisterPage()
+            '/Register':(context)=>RegisterPage(),
+            '/productView':(context)=>Productview(),
           },
         ),
       )

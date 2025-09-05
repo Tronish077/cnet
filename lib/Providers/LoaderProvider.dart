@@ -10,6 +10,10 @@ class LoadingNotifier extends StateNotifier<bool> {
     custom.LoaderSpinner(context);
   }
 
+  void awaitMini(context){
+    custom.awaitSpinner(context);
+  }
+
     void stopLoading(context){
       Navigator.of(context, rootNavigator: true).pop();
     }

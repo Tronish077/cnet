@@ -1,5 +1,6 @@
 class Listing {
   final String id;
+  final String ownerObjRef;
   final String title;
   final String description;
   final String price;
@@ -25,6 +26,7 @@ class Listing {
 
   Listing({
     required this.id,
+    required this.ownerObjRef,
     required this.title,
     required this.description,
     required this.price,
@@ -52,6 +54,7 @@ class Listing {
   factory Listing.fromJson(Map<String, dynamic> json) {
     return Listing(
       id: json['postId'] ?? '',
+      ownerObjRef: json['user']['_id'] ?? json['user'],
       title: json['title'] ?? '',
       description: json['description'] ?? '',
       price: json['price'] ?? '0',
@@ -105,6 +108,7 @@ class Listing {
   }) {
     return Listing(
       id: id ?? this.id,
+      ownerObjRef: ownerObjRef,
       title: title ?? this.title,
       description: description ?? this.description,
       price: price ?? this.price,
@@ -129,4 +133,12 @@ class Listing {
       ratingsCount: ratingsCount ?? this.ratingsCount,
     );
   }
+
+  @override
+  bool operator == (Object other) =>
+      identical(this, other) ||
+          other is Listing && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

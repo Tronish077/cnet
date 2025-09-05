@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:cnet/FunctionClasses/ListingClass.dart';
+import 'package:flutter/foundation.dart';
 import '../BackendFuncs/ListingHandling.dart';
 import 'package:riverpod/riverpod.dart';
 

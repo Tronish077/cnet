@@ -1,14 +1,19 @@
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cnet/FunctionClasses/ListingClass.dart';
+import 'package:cnet/Providers/viewProductProvider.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
-// import 'package:flutter_image_slideshow/flutter_image_slideshow.dart';
-// import 'package:mvp/CustomWidgets/CommentPanel.dart';
-// import 'package:mvp/CustomWidgets/imagesListing.dart';
-// import 'package:mvp/FunctionClasses/ListingClass.dart';
-// import 'package:readmore/readmore.dart';
-// import 'package:carousel_slider/carousel_slider.dart';
-// import 'package:video_player/video_player.dart';
+import '../BackendFuncs/MainBackend.dart';
+import '../Providers/SavedProvider.dart';
+import '../Providers/myListingsProvider.dart';
 
 class CustomWidgets {
+
+  final formatter = NumberFormat.decimalPattern('en_IN');
 
   Future LoaderSpinner(BuildContext context, {String words = "Please Wait.."}) {
     return showDialog(
@@ -116,6 +121,508 @@ class CustomWidgets {
     );
   }
 
+  Future<void> awaitSpinner(BuildContext context) {
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (BuildContext context) {
+        return Dialog(
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+          child: Container(
+            padding: const EdgeInsets.only(top:5),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LoadingAnimationWidget.twistingDots(
+                  size: 24, // Compact size
+                  leftDotColor: Theme.of(context).primaryColor,
+                  rightDotColor: Colors.blueAccent,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget MainCard(Listing item,WidgetRef ref,context) {
+    return GestureDetector(
+      onTap: (){
+        ref.watch(viewProductProvider.notifier).addToview(item);
+        Navigator.of(context).pushNamed('/productView');
+      },
+      child: Stack(
+
+          children:[
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                    child: CachedNetworkImage(
+                      imageUrl: item.imageUrls[0],
+                      height: 170,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 170,
+                        width: double.infinity,
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.blue),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) =>
+                      const Icon(Icons.image_not_supported),
+                    ),
+                  ),
+
+                  // Info
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min, // Prevents overflow
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          item.title,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 15),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 4),
+
+                        // Price
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              "₹ ${formatter.format(int.parse(item.price))}",
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w600, color: Colors.blueAccent),
+                            ),
+                            Container(
+                              padding:EdgeInsets.symmetric(horizontal: 2),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(2),
+                                // color: Colors.orange.shade300
+                              ),
+                              child: Text("(${item.condition})",style:
+                                TextStyle(
+                                  overflow: TextOverflow.ellipsis,
+                                  fontWeight: FontWeight.w400
+                                ),),
+                            )
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                elevation: 3,
+                shape: const CircleBorder(),
+                color: Colors.white,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () async {
+                    try {
+                      final notifier = ref.read(savesProvider.notifier);
+                      final currentSaved = ref.read(savesProvider);
+
+                      final statusCode = await saveListing(item);
+                      bool isSaved = currentSaved.contains(item);
+                      String message = "";
+                      IconData icon = Icons.info_outline;
+
+                      if (statusCode == 201) {
+                        notifier.addToSaved(item);
+                        message = "Added to Saved Listings";
+                        icon = Icons.check_circle_outline;
+                      }
+                      else if (statusCode == 409 && !isSaved) {
+                        notifier.addToSaved(item);
+                        message = "Already in Saved items";
+                        icon = Icons.info_outline;
+                      }
+                      else if (statusCode == 409 && isSaved) {
+                        final removeStatus = await deleteSavedListing(item);
+                        if (removeStatus == 200) {
+                          notifier.removeSaved(item);
+                          message = "Removed from Saved Listings";
+                          icon = Icons.remove_circle_outline;
+                        } else{
+                          message = "An error occurred please retry.";
+                          icon = Icons.error_outline;
+                        }
+                      }
+                      else if(statusCode == 401) {
+                        message = "Please Login Again and retry.";
+                        icon = Icons.error_outline;
+                      }
+                      else{
+                        message = message = "An error occurred. Please retry.";
+                      }
+
+                      // Show snackbar
+                      ScaffoldMessenger.of(context).clearSnackBars();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          showCloseIcon: true,
+                          backgroundColor: Colors.grey[900],
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 6,
+                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          content: Row(
+                            children: [
+                              Icon(icon, color: Colors.white),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  message,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    } catch (e, stack) {
+                      // Fallback error snackbar
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          backgroundColor: Colors.black87,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(12))),
+                          margin: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          elevation: 6,
+                          content: Row(
+                            children: [
+                              Icon(Icons.error_outline, color: Colors.white),
+                              SizedBox(width: 12),
+                              Text(
+                                "An unexpected error occurred.",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+
+                      if (kDebugMode) print("Save Error: $e\n$stack");
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4), // Controls icon padding inside circle
+                    child: Icon(
+                      ref.read(savesProvider).contains(item)
+                          ? Icons.bookmark_add
+                          : Icons.bookmark_add_outlined,
+                      size: 22,
+                      color: ref.read(savesProvider).contains(item) ? Colors.orange : Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ]
+      ),
+    );
+  }
+
+  Widget PfpItemCard(Listing item,WidgetRef ref,context) {
+    return GestureDetector(
+      onTap: (){
+        ref.watch(viewProductProvider.notifier).addToview(item);
+        Navigator.of(context).pushNamed('/productView');
+      },
+      child: Stack(
+          children:[
+            Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: Colors.white,
+                // boxShadow: [
+                //   BoxShadow(
+                //     color: Colors.grey.withOpacity(0.2),
+                //     blurRadius: 4,
+                //     offset: const Offset(0, 2),
+                //   ),
+                // ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image
+                  ClipRRect(
+                    borderRadius:BorderRadius.circular(2),
+                    child: CachedNetworkImage(
+                      imageUrl: item.imageUrls[0],
+                      height: 100,
+                      width: 100,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 170,
+                        width: double.infinity,
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.blue),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) =>
+                      const Icon(Icons.image_not_supported),
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  // Info
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min, // Prevents overflow
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Title
+                          Text(
+                            item.title,
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 15),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text("₹ ${formatter.format(int.parse(item.price))}",
+                                style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blueAccent),),
+                              SizedBox(width: 8,),
+                              Text("${item.imageUrls.length} image(s)",
+                                style: TextStyle(fontWeight: FontWeight.w600, color: Colors.blue.shade700),)
+                            ],
+                          ),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                height: 35,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                                child: TextButton.icon(
+                                  onPressed: (){
+                                    showDialogBox(context,ref,item);
+                                  },
+                                  label: Text("Delete From Store",style: TextStyle(
+                                    color: Colors.red,
+                                    fontWeight: FontWeight.w600,
+                                  ),),
+                                  icon: Icon(Icons.delete_outline,
+                                    color: Colors.red, )
+                                ),
+                              ),
+                              IconButton(
+                                onPressed: (){},
+                                style: IconButton.styleFrom(
+                                  backgroundColor:Colors.blue.shade50
+                                ),
+                                color: Color.fromARGB(255, 61, 42, 234),
+                                icon: Icon(FontAwesomeIcons.share),
+                              )
+                            ],
+                          )
+                          // Price
+                        ],
+                      ),
+                    ),
+                  ),
+
+                ],
+              ),
+            ),
+          ]
+      ),
+    );
+  }
+
+  Widget textBoxCustom(TextEditingController controller, String labelTxt,String errorText,IconData icn,{dynamic maxLines = 1} ){
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        prefixIcon: Icon(icn,size: 18,color: Color.fromARGB(180, 61, 42, 234),),
+        labelText: labelTxt,
+        labelStyle: TextStyle(fontWeight: FontWeight.w500,color: Colors.grey),
+        // Normal border
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Color.fromARGB(80, 61, 42, 234), width: 1.5),
+        ),
+        // Focused border (when typing)
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Color.fromARGB(180, 61, 42, 234), width: 2),
+        ),
+        // Error border
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.red, width: 1.5),
+        ),
+        // Focused + error border
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+          borderSide: BorderSide(color: Colors.red, width: 2),
+        ),
+      ),
+      validator: (value) => value!.isEmpty ? errorText : null,
+    );
+  }
+
+  Widget SavesCard(Listing item,WidgetRef ref, context) {
+    return GestureDetector(
+      onTap: (){
+        ref.watch(viewProductProvider.notifier).addToview(item);
+        Navigator.of(context).pushNamed('/productView');
+      },
+      child: Stack(
+
+          children:[
+            Container(
+              width: 180,
+              padding: EdgeInsets.only(right: 6),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: Colors.white,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Image
+                  ClipRRect(
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                    child: CachedNetworkImage(
+                      imageUrl:item.imageUrls[0],
+                      height: 160,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      placeholder: (context, url) => Container(
+                        height: 160,
+                        width: double.infinity,
+                        color: Colors.grey.shade200,
+                        child: const Center(
+                          child: CircularProgressIndicator(color: Colors.blue),
+                        ),
+                      ),
+                      errorWidget: (context, url, error) =>
+                      const Icon(Icons.image_not_supported),
+                    ),
+                  ),
+
+                  // Info
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // Title
+                        Text(
+                          item.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+
+                        const SizedBox(height: 4),
+
+                        // Price
+                        Text(
+                          "₹ ${formatter.format(int.parse(item.price))}",
+                          style: const TextStyle(
+                              fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                        ),
+
+                        const SizedBox(height: 4),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Material(
+                elevation: 3,
+                shape: const CircleBorder(),
+                color: Colors.white,
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: () async{
+                    if (ref.read(savesProvider).contains(item)) {
+                      try {
+                        final responseCode = await deleteSavedListing(item);
+
+                        if (responseCode == 200) {
+                          ref.read(savesProvider.notifier).removeSaved(item);
+                          showCustomSnackBar(context, Icons.remove_circle_outline_rounded, "Removed from saved listings");
+                        }
+                        else {
+                          showCustomSnackBar(context, Icons.error_outline, "An error occurred, Please retry");
+                        }
+                      }catch(e){
+                        showCustomSnackBar(context, Icons.error_outline, "An error occurred, Please retry");
+                      }
+                    }
+                  },
+                  child: Padding(
+                    padding: const EdgeInsets.all(4), // Controls icon padding inside circle
+                    child: Icon(Icons.cancel_outlined,
+                      size: 26,
+                      color: ref.read(savesProvider).contains(item) ? Colors.red : Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+          ]
+      ),
+    );
+  }
+
   Widget messagesIcon(text, context) {
     return Stack(
       clipBehavior: Clip.none,
@@ -157,321 +664,112 @@ class CustomWidgets {
       ],
     );
   }
+
+  void showCustomSnackBar(BuildContext context, IconData icon, String message, {Color? color}) {
+    ScaffoldMessenger.of(context).clearSnackBars();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      backgroundColor: Colors.grey[900],
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      elevation: 6,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      content: Row(
+        children: [
+          Icon(icon, color: color ?? Colors.white),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500),
+            ),
+          ),
+        ],
+      ),
+    ));
   }
 
-//   Widget imageListing(scrnWidth, scrnHeight, Listing listing,context) {
-//     return Container(
-//       decoration: BoxDecoration(
-//           color: Colors.white60,
-//           border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-//           borderRadius: BorderRadius.circular(0)
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Container(
-//             child:
-//             Column(
-//               children:[
-//               Container(
-//                 padding: EdgeInsets.symmetric(horizontal: 13,vertical: 8),
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                 children: [
-//                   Row(
-//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                   children: [
-//                     Row(children: [
-//                       CircleAvatar(
-//                         backgroundImage: NetworkImage(
-//                             "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=600"),
-//                         radius: 20.0,
-//                       ),
-//                       SizedBox(width: scrnWidth * 0.03),
-//                       Text(listing.ownerName, style: TextStyle(
-//                           fontWeight: FontWeight.w600,
-//                           fontSize: 14
-//                       ),),
-//                       SizedBox(width: scrnWidth * 0.03),
-//                       Icon(Icons.stars_rounded, color: Colors.yellow[900], size: 12,),
-//                       Text(" ${listing.ratings} (${listing.ratingsCount})", style: TextStyle(fontSize: 11,fontWeight: FontWeight.w600),),
-//                     ],),
-//             ],
-//                 ),
-//                   ReadMoreText(
-//                   "${listing.subtitle}",
-//                   trimLines: 2,
-//                   colorClickableText: Colors.grey[400],
-//                   trimMode: TrimMode.Line,
-//                   trimCollapsedText: ' See More...',
-//                   trimExpandedText: ' \nSee Less...',
-//                   style: TextStyle(color: Colors.black87,
-//                       fontSize: 15,
-//                       fontWeight: FontWeight.w500),
-//                   moreStyle: TextStyle(fontSize: 12,
-//                       fontWeight: FontWeight.bold,
-//                       color: Colors.grey[600]),
-//                   lessStyle: TextStyle(fontSize: 12,
-//                       fontWeight: FontWeight.bold,
-//                       color: Colors.grey[600]),
-//                 ),
-//                   ]
-//                 ),
-//               ),
-//               SizedBox(height: scrnHeight * 0.01),
-//               MultipleImages(imageUrls: listing.imageUrls!),
-//               SizedBox(height: scrnHeight * 0.01),
-//               //Metrics Row
-//                 Container(
-//                   padding: EdgeInsets.symmetric(horizontal: 14),
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       Row(
-//                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//                         children: [
-//                           Row(
-//                             children: [
-//                               OutlinedButton(onPressed: () {},
-//                                   style: OutlinedButton.styleFrom(
-//                                       backgroundColor: Colors.indigo,
-//                                       padding: EdgeInsets.symmetric(
-//                                           horizontal: 12, vertical: 6),
-//                                       minimumSize: Size(0, 0),
-//                                       side: BorderSide(width: 2, color: Colors.indigo)
-//                                   ),
-//                                   child: Text("Follow + ",
-//                                     style: TextStyle(fontSize: 12, color: Colors.white),
-//                                   )),
-//                               SizedBox(width: scrnWidth * 0.02),
-//                               OutlinedButton(onPressed: () {},
-//                                   style: OutlinedButton.styleFrom(
-//                                       padding: EdgeInsets.symmetric(
-//                                           horizontal: 12, vertical: 6),
-//                                       minimumSize: Size(0, 0),
-//                                       side: BorderSide(width: 1)
-//                                   ),
-//                                   child: Text("Message",
-//                                     style: TextStyle(fontSize: 12, color: Colors.black),
-//                                   ))
-//                             ],
-//                           ),
-//                           Row(children: [
-//                             //Interaction's box
-//                             IconButton(
-//                               icon: Icon(Icons.mode_comment_outlined), onPressed: () {
-//                               _showCommentSheet(context,listing.id);
-//                             },),
-//                             Text("${listing.commentCount}", style: TextStyle(fontSize: 12),),
-//                             SizedBox(width: scrnWidth * 0.02),
-//                             IconButton(icon: Icon(Icons.bookmark_border_rounded), onPressed: () {},),
-//                             Text("${listing.shareCount}", style: TextStyle(fontSize: 12),)
-//                           ],),
-//                         ],
-//                       ),
-//                       Text(
-//                         "3 Days ago",
-//                         style: TextStyle(
-//                             fontSize: 12,
-//                             color: Colors.grey[500]
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 )
-//               ]
-//             )
-//           ),
-//         ],
-//       ),
-//     );
-//   }
+  Future showDialogBox(BuildContext context,WidgetRef ref,Listing item){
+    return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          titlePadding: EdgeInsets.zero,
+          contentPadding: EdgeInsets.zero,
+          backgroundColor: Colors.white,
+          title: Container(
+            padding: EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.info_outline_rounded, color: Colors.blue),
+                SizedBox(width: 8),
+                Text(
+                  "Information",
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.blue.shade900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          content: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16,vertical: 8),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Are you sure you want to delete this listing?",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.black87,
+                  ),
+                ),
+                SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    //Cancel Button
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(),
+                      child: Text(
+                        "Cancel",
+                        style: TextStyle(color: Colors.grey[700]),
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    //Delete Button
+                    TextButton(
+                      style:TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      onPressed: () {
+                        ref.watch(myListingsProvider.notifier).deleteListing(item);
+                        Navigator.of(context).pop();
+                      },
+                      child: Text("Delete"),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
 
-//   Widget textListing(scrnWidth, scrnHeight,Listing listing, context){
-//     return Container(
-//       padding: EdgeInsets.symmetric(horizontal: 16),
-//       decoration: BoxDecoration(
-//         color: Colors.white60,
-//         borderRadius: BorderRadius.circular(12),
-//         border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-//       ),
-//       child: Column(
-//         crossAxisAlignment: CrossAxisAlignment.start,
-//         children: [
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Row(children: [
-//                 CircleAvatar(
-//                   backgroundImage: NetworkImage(
-//                       "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=600"),
-//                   radius: 16.0,
-//                 ),
-//                 SizedBox(width: scrnWidth * 0.03),
-//                 Text(listing.ownerName, style: TextStyle(
-//                     fontWeight: FontWeight.w600,
-//                     fontSize: 14
-//                 ),),
-//                 SizedBox(width: scrnWidth * 0.03),
-//                 Icon(Icons.stars_rounded, color: Colors.yellow[900], size: 12,),
-//                 Text("${listing.ratings} (${listing.ratingsCount})",
-//                   style: TextStyle(fontSize: 11),),
-//               ],),
-//               IconButton(onPressed: () {}, icon: Icon(Icons.more_horiz_rounded))
-//             ],
-//           ),
-//           SizedBox(height: scrnHeight * 0.002),
-//           ReadMoreText(
-//            "${listing.subtitle}",
-//             trimLines: 2,
-//             colorClickableText: Colors.grey[400],
-//             trimMode: TrimMode.Line,
-//             trimCollapsedText: ' See More...',
-//             trimExpandedText: ' \nSee Less...',
-//             style: TextStyle(color: Colors.black87,
-//                 fontSize: 15,
-//                 fontWeight: FontWeight.w500),
-//             moreStyle: TextStyle(fontSize: 12,
-//                 fontWeight: FontWeight.bold,
-//                 color: Colors.grey[600]),
-//             lessStyle: TextStyle(fontSize: 12,
-//                 fontWeight: FontWeight.bold,
-//                 color: Colors.grey[600]),
-//           ),
-//           SizedBox(height: scrnHeight * 0.005),
-//           //metrics
-//           Row(
-//             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//             children: [
-//               Row(
-//                 children: [
-//                   OutlinedButton(onPressed: () {},
-//                       style: OutlinedButton.styleFrom(
-//                           backgroundColor: Colors.indigo,
-//                           padding: EdgeInsets.symmetric(
-//                               horizontal: 12, vertical: 6),
-//                           minimumSize: Size(0, 0),
-//                           side: BorderSide(width: 2, color: Colors.indigo)
-//                       ),
-//                       child: Text("Follow + ",
-//                         style: TextStyle(fontSize: 12, color: Colors.white),
-//                       )),
-//                   SizedBox(width: scrnWidth * 0.02),
-//                   OutlinedButton(onPressed: () {},
-//                       style: OutlinedButton.styleFrom(
-//                           padding: EdgeInsets.symmetric(
-//                               horizontal: 12, vertical: 6),
-//                           minimumSize: Size(0, 0),
-//                           side: BorderSide(width: 1)
-//                       ),
-//                       child: Text("Message",
-//                         style: TextStyle(fontSize: 12, color: Colors.black),
-//                       ))
-//                 ],
-//               ),
-//               Row(children: [
-//                 //Interaction's box
-//                 IconButton(
-//                   icon: Icon(Icons.mode_comment_outlined), onPressed: () {
-//                   _showCommentSheet(context, listing.id);
-//                 },),
-//                 Text("${listing.commentCount}", style: TextStyle(fontSize: 12),),
-//                 SizedBox(width: scrnWidth * 0.02),
-//                 IconButton(icon: Icon(Icons.bookmark_border_rounded), onPressed: () {},),
-//                 Text("${listing.shareCount}", style: TextStyle(fontSize: 12),)
-//               ],),
-//             ],
-//           ),
-//           Text(
-//             "3 Days ago",
-//             style: TextStyle(
-//                 fontSize: 12,
-//                 color: Colors.grey[500]
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-  
-//   Widget topBar(context){
-//     return Container(
-//       decoration: BoxDecoration(
-//           border: Border(bottom:BorderSide(color: Colors.black12))
-//       ),
-//       padding: EdgeInsets.symmetric(vertical: 8,horizontal: 12),
-//       child: Row(
-//         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-//         children: [
-//           Text(
-//             "CampusNet.",
-//             style: TextStyle(
-//                 fontFamily: 'Molle',
-//                 color: Colors.black,
-//                 fontSize: 24
-//             ),
-//           ),
-//           Row(
-//             children: [
-//               notificationIcon("0",context),
-//               messagesIcon("0",context)
-//             ],
-//           )
-//         ],
-//       ),
-//     );
-//   }
+  }
 
-//   Widget featuredTitle() {
-//     return Container(
-//       width: double.infinity,
-//       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-//       decoration: BoxDecoration(
-//         color: Colors.grey[50], // Light background to separate section
-//         border: Border(
-//           bottom: BorderSide(color: Colors.black12),
-//         ),
-//       ),
-//       child: Row(
-//         children: [
-//           Icon(Icons.star_rounded, color: Colors.amber[700]),
-//           const SizedBox(width: 8),
-//           Text(
-//             "Featured Listings",
-//             style: TextStyle(
-//               fontSize: 18,
-//               fontWeight: FontWeight.w600,
-//               letterSpacing: 0.3,
-//               color: Colors.black87,
-//             ),
-//           ),
-//         ],
-//       ),
-//     );
-//   }
-
-// }
-
-
-// void _showCommentSheet(BuildContext context, String postId){
-//   showModalBottomSheet(
-//       context: context,
-//       isScrollControlled: true,
-//       shape: RoundedRectangleBorder(
-//         borderRadius: BorderRadius.vertical(top: Radius.circular(20))
-//       ),
-//       builder:(context){
-//         return DraggableScrollableSheet(
-//             initialChildSize: 0.75, // Start from 75% screen height
-//             minChildSize: 0.4,     // Minimum height on drag down
-//             maxChildSize: 0.85,    // Maximum height when pulled up
-//             expand: false,
-//             builder: (_,controller) => Padding(
-//               padding:  EdgeInsets.only(
-//                 bottom: MediaQuery.of(context).viewInsets.bottom
-//               ),
-//               child: CommentPanel(postId: postId, controller: controller),
-//             )
-//         );
-//       });
-// }
+}
