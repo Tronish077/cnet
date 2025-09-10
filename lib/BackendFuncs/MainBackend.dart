@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 
 //This is the main EndPoint Url
-final String mainUrl = "https://ba61eeeec104.ngrok-free.app";
+final String mainUrl = "https://fe05b8596b47.ngrok-free.app";
 
 Future uploadListing(
     List<XFile> imageUrls,title,contact,

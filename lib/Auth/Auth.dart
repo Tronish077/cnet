@@ -14,7 +14,7 @@ import '../Providers/FollowProvider.dart';
 
 final FirebaseAuth _auth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
-final mainUrl = 'https://ba61eeeec104.ngrok-free.app';
+final mainUrl = 'https://fe05b8596b47.ngrok-free.app';
 
 class MyAuth {
 

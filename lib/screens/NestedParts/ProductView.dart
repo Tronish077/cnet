@@ -141,6 +141,8 @@ class _ProductviewState extends ConsumerState<Productview> {
                     imageUrl: item.imageUrls[0],
                     fit: BoxFit.cover,
                     width: double.infinity,
+                    errorWidget: (context, url, error) =>
+                    const Icon(Icons.image_not_supported),
                   ),
                 )
               ),
